@@ -161,11 +161,44 @@
       if (robots) log('robots.txt', robots);
     } catch {}
 
-    const links = [...document.querySelectorAll('a')]
+    // === Links Analysis ===
+    const allLinks = [...document.querySelectorAll('a')]
       .map(a => a.href)
-      .filter((v, i, a) => a.indexOf(v) === i && v.startsWith(window.location.origin))
+      .filter((v, i, a) => a.indexOf(v) === i)
       .sort();
-    if (links.length) log('Internal links on page', links);
+
+    const internalLinks = allLinks.filter(link => link.startsWith(window.location.origin));
+    const externalLinks = allLinks.filter(link => 
+      link.startsWith('http') && !link.startsWith(window.location.origin)
+    );
+
+    // Cloud storage buckets
+    const bucketPatterns = [
+      /s3[.-][\w-]*\.amazonaws\.com/i,
+      /[\w-]+\.s3[.-][\w-]*\.amazonaws\.com/i,
+      /storage\.googleapis\.com/i,
+      /[\w-]+\.storage\.googleapis\.com/i,
+      /blob\.core\.windows\.net/i,
+      /[\w-]+\.blob\.core\.windows\.net/i,
+      /digitaloceanspaces\.com/i,
+      /[\w-]+\.digitaloceanspaces\.com/i,
+      /r2\.cloudflarestorage\.com/i,
+      /[\w-]+\.r2\.dev/i,
+      /backblazeb2\.com/i,
+      /f[\d]+\.backblazeb2\.com/i,
+      /wasabisys\.com/i,
+      /s3\.wasabisys\.com/i,
+      /aliyuncs\.com/i,
+      /cos\.[\w-]+\.myqcloud\.com/i
+    ];
+
+    const bucketLinks = allLinks.filter(link => 
+      bucketPatterns.some(pattern => pattern.test(link))
+    );
+
+    if (internalLinks.length) log('Internal links on page', internalLinks);
+    if (externalLinks.length) log('External links', externalLinks);
+    if (bucketLinks.length) log('Cloud storage bucket links', bucketLinks);
 
     const webpackKeys = Object.keys(window).filter(k => k.includes('webpack'));
     if (webpackKeys.length) log('Webpack chunks', webpackKeys);
